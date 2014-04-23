@@ -126,7 +126,7 @@ function update_projectile(){
 function enemy_AI(){
     if(enemyAlive == 0)
     {
-        var rAI = 0; //game.rnd.integerInRange(0,numAI);
+        var rAI = game.rnd.integerInRange(0,numAI);
         if(rAI == 0)
         {
             enemyAlive = 2;
@@ -238,10 +238,11 @@ function collisionHandler(bullet,enemy){
     bullet.kill();
     //bullets.remove(bullet);
 
-    //enemy.hp -= 1;
+    enemy.hp -= 1;
     if(enemy.hp <= 0)
     {
         enemy.kill();
+        enemyAlive -= 1
         //enemies.remove(enemy);
     }
 }
@@ -250,5 +251,5 @@ function playerHit(player,bullet){
     bullet.kill();
     //bullets.remove(bullet);
 
-    //playerHP -= 1;
+    playerHP -= 1;
 }
