@@ -61,11 +61,17 @@ function create()
     bullets = game.add.group();
     bullets.enableBody = true;
     bullets.physicsBodyType = Phaser.Physics.ARCADE;
+    bullets.createMultiple(10,'bullet');
+    bullets.setAll('outOfBoundsKill', true);
+    bullets.setAll('checkWorldBounds', true);
 
     // Create bullets group and set default values.
     bulletsE = game.add.group();
     bulletsE.enableBody = true;
     bulletsE.physicsBodyType = Phaser.Physics.ARCADE;
+    bulletsE.createMultiple(10,'enemyBullet');
+    bulletsE.setAll('outOfBoundsKill', true);
+    bulletsE.setAll('checkWorldBounds', true);
 
     // Create enemies group and get default values.
     enemies = game.add.group();
@@ -106,27 +112,13 @@ function update_player(){
 }
 
 function update_projectile(){
-    for(var i = 0;i < bullets.length;i++){
-        if(bullets.getAt(i).y <= 0 || bulletsE.getAt(i).y >= game.world.height)
-        {
-            bullets.getAt(i).kill();
-            //bullets.remove(bullets.getAt(i));
-        }
-    }
 
-    for(var i = 0;i < bullets.length;i++){
-        if(bulletsE.getAt(i).y <= 0 || bulletsE.getAt(i).y >= game.world.height)
-        {
-            bulletsE.getAt(i).kill();
-            //bulletsE.remove(bullets.getAt(i));
-        }
-    }
 }
 
 function enemy_AI(){
     if(enemyAlive == 0)
     {
-        var rAI = game.rnd.integerInRange(0,numAI);
+        var rAI = 2 //game.rnd.integerInRange(0,numAI);
         if(rAI == 0)
         {
             enemyAlive = 2;
@@ -139,7 +131,15 @@ function enemy_AI(){
             enemyAlive = 4;
             for(var i = 0; i < enemyAlive; i++)
             {
-                createEnemy(-200 + (-100 * i),(game.world.height / 4),rAI);
+                createEnemy(-100 + (-100 * i),(game.world.height / 4),rAI);
+            }
+        } else if(rAI == 2)
+        {
+            enemyAlive = 4;
+            for(var i = 0; i < 2; i++)
+            {
+                createEnemy(-100,100 + (100 * i),rAI);
+                createEnemy(game.world.width + 100,100 + (100 * i),rAI);
             }
         }
     } else
@@ -152,12 +152,21 @@ function enemy_AI(){
                    if(enemyCur.y <= 150 && enemyCur.x <= (game.world.width / 6)*5)
                    {
                        enemyCur.body.velocity.y = 100;
-                   } else if(enemyCur.y >= 150 && enemyCur.x <= (game.world.width / 6)*5)
+                   } else if(enemyCur.y >= 150 && enemyCur.x <= (game.world.width / 2))
                    {
-                       enemyCur.body.velocity.y = 0;
+                       enemyCur.body.velocity.y = 50;
                        enemyCur.body.velocity.x = 100;
-                       shootEnemy(enemyCur,1000);
-                   } else if(enemyCur.y >= -200 && enemyCur.x >= (game.world.width / 6)*5)
+                       if(enemyCur != null){
+                           shootEnemy(enemyCur,1000);
+                       }
+                   } else if(enemyCur.y >= 150 && enemyCur.x >= (game.world.width / 2))
+                   {
+                       enemyCur.body.velocity.y = -50;
+                       enemyCur.body.velocity.x = 100;
+                       if(enemyCur != null){
+                           shootEnemy(enemyCur,1000);
+                       }
+                   }  else if(enemyCur.y >= -200 && enemyCur.x >= (game.world.width / 6)*5)
                    {
                        enemyCur.body.velocity.y = -100;
                        enemyCur.body.velocity.x = 0;
@@ -169,15 +178,44 @@ function enemy_AI(){
                    }
                 } else if(enemyCur.numAI == 1)
                 {
-                    if(enemyCur.x <= 680)
-                    {
+                    if(enemyCur.x <= game.world.width) {
                         enemyCur.body.velocity.x = 100;
-                        shootEnemy(enemyCur,game.rnd.integerInRange(2000,4000));
+                        if (enemyCur != null) {
+                            shootEnemy(enemyCur, game.rnd.integerInRange(2000, 4000));
+                        }
                     } else
                     {
                         enemyCur.kill();
                         //enemies.remove(enemyCur);
                         enemyAlive -= 1;
+                    }
+                } else if(enemyCur.numAI == 2)
+                {
+                    var moved = false;
+                    var leftTime = 0;
+                    var rightTime = 0;
+                    if(enemyCur.x <= 90 && (enemyCur.y == 100 || enemyCur.y == 200))
+                    {
+                        enemyCur.body.velocity.x = 100;
+                    } else if(enemyCur.x >= 80 && enemyCur.x <= 240 && enemyCur.y == 100)
+                    {
+                        enemyCur.body.velocity.x = 0;
+                    } else if(enemyCur.x >= 180 && enemyCur.x <= 240 && enemyCur.y == 200)
+                    {
+                        enemyCur.body.velocity.x = 0;
+                        enemyCur.y += 1;
+                        leftTime = game.time.now + 450;
+                    }
+
+                    if(enemyCur.x >= 400)
+                    {
+                        enemyCur.body.velocity.x = -100;
+                    } else if(enemyCur.x <= 400 && enemyCur.x >= 240 && enemyCur.y == 100)
+                    {
+                        enemyCur.body.velocity.x = 0;
+                    } else if(enemyCur.x <= 320 && enemyCur.x >= 240 && enemyCur.y == 200)
+                    {
+                        enemyCur.body.velocity.x = 0;
                     }
                 }
             }
@@ -204,24 +242,22 @@ function rightOnClick(){
 
 function shootOnClick(){
     if(game.time.now > shootTime) {
-        var bullet1 = bullets.create(player.x - 24, player.y, 'bullet');
-        bullet1.body.velocity.y = -400;
-
-        var bullet2 = bullets.create(player.x + 22, player.y, 'bullet');
-        bullet2.body.velocity.y = -400;
-
-        shootTime = game.time.now + 150;
+        var bullet1 = bullets.getFirstExists(false);
+        if(bullet1) {
+            bullet1.reset(player.x - 24, player.y);
+            bullet1.body.velocity.y = -400;
+        }
+        shootTime = game.time.now + 200;
     }
 }
 
 function shootEnemy(enemyCur,shootInt){
     if(game.time.now > enemyCur.shootTimeE){
-        var bullet1 = bulletsE.create(enemyCur.x - 24, enemyCur.y, 'enemyBullet');
-        bullet1.body.velocity.y = 300;
-
-        var bullet2 = bulletsE.create(enemyCur.x + 22, enemyCur.y, 'enemyBullet');
-        bullet2.body.velocity.y = 300;
-
+        var bulletE = bulletsE.getFirstExists(false);
+        if(bulletE) {
+            bulletE.reset(enemyCur.x - 24, enemyCur.y);
+            bulletE.body.velocity.y = 300;
+        }
         enemyCur.shootTimeE = game.time.now + shootInt;
     }
 }
@@ -242,7 +278,7 @@ function collisionHandler(bullet,enemy){
     if(enemy.hp <= 0)
     {
         enemy.kill();
-        enemyAlive -= 1
+        enemyAlive -= 1;
         //enemies.remove(enemy);
     }
 }
