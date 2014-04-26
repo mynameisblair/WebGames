@@ -2,6 +2,7 @@
  * Created by Diamond on 20/04/2014.
  */
 var game = new Phaser.Game(480,800, Phaser.AUTO, '', {preload:preload, create: create, update:update});
+var inMenu = true;
 var player;
 var cursors;
 var leftButton;
@@ -15,8 +16,16 @@ var enemies;
 var shootTime = 0;
 var enemyAlive = 0;
 var enemyTotal = 0;
-var numAI = 1;
+var numAI = 2;
 var playerHP = 3;
+var moved = false;
+var leftTime = 0;
+var scoreTotal = 0;
+var addScore = 0;
+var obstacles;
+var spawnObs = 10000;
+var menuText;
+var logo;
 
 var testString = '';
 var testText;
@@ -31,6 +40,8 @@ function preload()
     game.load.image('bullet', 'assets/bullet.png');
     game.load.image('enemyBullet', 'assets/enemyBullet.png');
     game.load.image('enemy', 'assets/shipEnemy.png');
+    game.load.image('obstacle', 'assets/obstacle.png');
+    game.load.image('logo', 'assets/logo.png');
 }
 
 function create()
@@ -40,7 +51,32 @@ function create()
 
     // Create background images for scrolling.
     background = game.add.tileSprite(0,0,480,800,'background');
+    logo = game.add.sprite(240,300,'logo');
+    logo.anchor.setTo(0.5,0.5);
+    menuText = game.add.text(160,500,'', { font: '50px Fixedsys', fill: '#ff0000' });
 
+    game.input.onTap.addOnce(gameStart, this);
+}
+
+function update()
+{
+    if(inMenu == true)
+    {
+        menuText.text = 'Start';
+        update_bg();
+    } else {
+        update_bg();
+        update_player();
+        enemy_AI();
+        spawn_obstacles();
+        check_collide();
+        update_UI();
+    }
+}
+
+function gameStart(){
+    logo.kill();
+    menuText.text = '';
     // Create player.
     player = game.add.sprite(game.world.width / 2,(game.world.height / 3) * 2,'ship');
     player.anchor.setTo(0.5,0.5);
@@ -51,16 +87,18 @@ function create()
     // Create cursors group for movement.
     cursors = game.input.keyboard.createCursorKeys();
 
-    // Create UI buttons.
-    leftButton = game.add.button(0,game.world.height - 128, 'left', leftOnClick,this,2,1,0);
-    rightButton = game.add.button(game.world.width - 64,game.world.height - 128, 'right', rightOnClick,this,2,1,0);
-    shootButton = game.add.button(game.world.centerX - 84,game.world.height - 85, 'shoot', shootOnClick,this,2,1,0);
-    fireButton = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+    //Create obstacle group and set default values.
+    obstacles = game.add.group();
+    obstacles.enableBody = true;
+    obstacles.physicsBodyType = Phaser.Physics.ARCADE;
+    obstacles.z = 3;
+    obstacles.createMultiple(10,'obstacle');
 
     // Create bullets group and set default values.
     bullets = game.add.group();
     bullets.enableBody = true;
     bullets.physicsBodyType = Phaser.Physics.ARCADE;
+    bullets.z = 1;
     bullets.createMultiple(10,'bullet');
     bullets.setAll('outOfBoundsKill', true);
     bullets.setAll('checkWorldBounds', true);
@@ -69,27 +107,28 @@ function create()
     bulletsE = game.add.group();
     bulletsE.enableBody = true;
     bulletsE.physicsBodyType = Phaser.Physics.ARCADE;
+    bulletsE.z = 1;
     bulletsE.createMultiple(10,'enemyBullet');
     bulletsE.setAll('outOfBoundsKill', true);
     bulletsE.setAll('checkWorldBounds', true);
 
-    // Create enemies group and get default values.
+    // Create enemies group and set default values.
     enemies = game.add.group();
     enemies.enableBody = true;
     enemies.physicsBodyType = Phaser.Physics.ARCADE;
+    enemies.z = 2;
+
+    // Create UI buttons.
+    leftButton = game.add.button(0,game.world.height - 128, 'left', leftOnClick,this,2,1,0);
+    leftButton.z = 4;
+    rightButton = game.add.button(game.world.width - 64,game.world.height - 128, 'right', rightOnClick,this,2,1,0);
+    rightButton.z = 4;
+    shootButton = game.add.button(game.world.centerX - 84,game.world.height - 85, 'shoot', shootOnClick,this,2,1,0);
+    shootButton.z = 4;
+    fireButton = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
     testText = game.add.text(10,10,testString, { font: '20px Arial', fill: '#fff' });
-}
-
-function update()
-{
-    update_bg();
-    update_player();
-    update_projectile();
-    enemy_AI();
-    check_collide();
-    update_score();
-    testText.text = playerHP;
+    inMenu = false;
 }
 
 function update_bg(){
@@ -111,14 +150,10 @@ function update_player(){
     }
 }
 
-function update_projectile(){
-
-}
-
 function enemy_AI(){
     if(enemyAlive == 0)
     {
-        var rAI = 2 //game.rnd.integerInRange(0,numAI);
+        var rAI = game.rnd.integerInRange(0,numAI);
         if(rAI == 0)
         {
             enemyAlive = 2;
@@ -135,11 +170,12 @@ function enemy_AI(){
             }
         } else if(rAI == 2)
         {
-            enemyAlive = 4;
-            for(var i = 0; i < 2; i++)
+            enemyAlive = 2;
+            for(var i = 0; i < 1; i++)
             {
-                createEnemy(-100,100 + (100 * i),rAI);
-                createEnemy(game.world.width + 100,100 + (100 * i),rAI);
+                createEnemy(-100,200,rAI);
+                createEnemy(game.world.width + 100,200,rAI);
+                moved = false;
             }
         }
     } else
@@ -191,31 +227,49 @@ function enemy_AI(){
                     }
                 } else if(enemyCur.numAI == 2)
                 {
-                    var moved = false;
-                    var leftTime = 0;
-                    var rightTime = 0;
-                    if(enemyCur.x <= 90 && (enemyCur.y == 100 || enemyCur.y == 200))
+                    if(enemyCur.x <= 90 && moved == false)
                     {
                         enemyCur.body.velocity.x = 100;
-                    } else if(enemyCur.x >= 80 && enemyCur.x <= 240 && enemyCur.y == 100)
+                    } else if(enemyCur.x >= 80 && enemyCur.x <= 240 && enemyCur.y == 100 && moved == false)
                     {
                         enemyCur.body.velocity.x = 0;
-                    } else if(enemyCur.x >= 180 && enemyCur.x <= 240 && enemyCur.y == 200)
+                    } else if(enemyCur.x >= 180 && enemyCur.x <= 240 && enemyCur.y == 200 && moved == false)
                     {
                         enemyCur.body.velocity.x = 0;
-                        enemyCur.y += 1;
-                        leftTime = game.time.now + 450;
-                    }
-
-                    if(enemyCur.x >= 400)
+                        leftTime = game.time.now + 300;
+                        moved = true;
+                    } else if(enemyCur.x <= 240 && leftTime > game.time.now && moved == true)
+                    {
+                        shootEnemy(enemyCur,400);
+                    } else if(enemyCur.x <= 240 && enemyCur.x >= 0 && moved == true)
                     {
                         enemyCur.body.velocity.x = -100;
-                    } else if(enemyCur.x <= 400 && enemyCur.x >= 240 && enemyCur.y == 100)
+                    } else if(enemyCur.x <= 240 && moved == true && enemyCur.x <= 0) {
+                        enemyCur.kill();
+                        enemyAlive -= 1;
+                    }
+
+                    if(enemyCur.x >= 400 && moved == false)
+                    {
+                        enemyCur.body.velocity.x = -100;
+                    } else if(enemyCur.x <= 400 && enemyCur.x >= 240 && enemyCur.y == 100 && moved == false)
                     {
                         enemyCur.body.velocity.x = 0;
-                    } else if(enemyCur.x <= 320 && enemyCur.x >= 240 && enemyCur.y == 200)
+                    } else if(enemyCur.x <= 320 && enemyCur.x >= 240 && enemyCur.y == 200 && moved == false)
                     {
                         enemyCur.body.velocity.x = 0;
+                        leftTime = game.time.now + 300;
+                        moved = true;
+                    } else if(enemyCur.x >= 240 && leftTime > game.time.now && moved == true)
+                    {
+                        shootEnemy(enemyCur,400);
+                    } else if(enemyCur.x >= 240 && enemyCur.x <= game.world.width && moved == true)
+                    {
+                        enemyCur.body.velocity.x = 100;
+                    } else if(enemyCur.x >= 240 && enemyCur.x >= game.world.width && moved == true)
+                    {
+                        enemyCur.kill();
+                        enemyAlive -= 1;
                     }
                 }
             }
@@ -223,13 +277,30 @@ function enemy_AI(){
     }
 }
 
+function spawn_obstacles(){
+   if(spawnObs < game.time.now)
+   {
+       var obs = obstacles.getFirstExists(false);
+       obs.reset(game.rnd.integerInRange(0,game.world.width),0);
+       obs.body.velocity.y = 100;
+       spawnObs = game.time.now + 5000;
+   }
+}
+
 function check_collide(){
     game.physics.arcade.overlap(bullets, enemies, collisionHandler, null, this);
     game.physics.arcade.overlap(bulletsE, player, playerHit, null, this);
+    game.physics.arcade.overlap(obstacles,player,playerHitOb,null,this);
 }
 
-function update_score(){
+function update_UI(){
 
+    if(addScore < game.time.now)
+    {
+        scoreTotal += 5;
+        addScore = game.time.now + 200;
+    }
+    testText.text = "HP: " + playerHP + "\n" + "Score: " + scoreTotal;
 }
 
 function leftOnClick(){
@@ -247,7 +318,7 @@ function shootOnClick(){
             bullet1.reset(player.x - 24, player.y);
             bullet1.body.velocity.y = -400;
         }
-        shootTime = game.time.now + 200;
+        shootTime = game.time.now + 600;
     }
 }
 
@@ -279,6 +350,7 @@ function collisionHandler(bullet,enemy){
     {
         enemy.kill();
         enemyAlive -= 1;
+        scoreTotal += 100;
         //enemies.remove(enemy);
     }
 }
@@ -286,6 +358,12 @@ function collisionHandler(bullet,enemy){
 function playerHit(player,bullet){
     bullet.kill();
     //bullets.remove(bullet);
+
+    playerHP -= 1;
+}
+
+function playerHitOb(player,ob){
+    ob.kill();
 
     playerHP -= 1;
 }
