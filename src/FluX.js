@@ -148,6 +148,10 @@ function update_player(){
     {
         shootOnClick();
     }
+    if(playerHP <= 0)
+    {
+        gameOver();
+    }
 }
 
 function enemy_AI(){
@@ -366,4 +370,13 @@ function playerHitOb(player,ob){
     ob.kill();
 
     playerHP -= 1;
+}
+
+function gameOver(){
+    for(var i = 0; i < 1; i++)
+    {
+        enemies.getAt(i).kill();
+        obstacles.getAt(i).kill();
+    }
+    player.kill();
 }
