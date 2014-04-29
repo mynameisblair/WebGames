@@ -3,6 +3,7 @@
  */
 var game = new Phaser.Game(480,800, Phaser.AUTO, '', {preload:preload, create: create, update:update});
 var inMenu = true;
+var inEnd = false;
 var player;
 var cursors;
 var leftButton;
@@ -64,13 +65,19 @@ function update()
     {
         menuText.text = 'Start';
         update_bg();
-    } else {
+    } else if(inEnd == false)
+    {
         update_bg();
         update_player();
         enemy_AI();
         spawn_obstacles();
         check_collide();
         update_UI();
+    } else if(inEnd == true)
+    {
+        testText.text = '';
+        menuText.text = ' Dead'
+        update_bg();
     }
 }
 
@@ -147,10 +154,6 @@ function update_player(){
     if(fireButton.isDown)
     {
         shootOnClick();
-    }
-    if(playerHP <= 0)
-    {
-        gameOver();
     }
 }
 
@@ -364,19 +367,44 @@ function playerHit(player,bullet){
     //bullets.remove(bullet);
 
     playerHP -= 1;
+    if(playerHP <= 0)
+    {
+        gameOver();
+    }
 }
 
 function playerHitOb(player,ob){
     ob.kill();
 
     playerHP -= 1;
+    if(playerHP <= 0)
+    {
+        gameOver();
+    }
 }
 
 function gameOver(){
-    for(var i = 0; i < 1; i++)
+    for(var i = 0; i < enemies.length; i++)
     {
         enemies.getAt(i).kill();
+    }
+    for(var i=0;i<obstacles.length;i++)
+    {
         obstacles.getAt(i).kill();
     }
+    for(var i=0;i<bullets.length;i++)
+    {
+        bullets.getAt(i).kill();
+    }
+    for(var i=0;i<bulletsE.length;i++)
+    {
+        bulletsE.getAt(i).kill();
+    }
     player.kill();
+    leftButton.kill();
+    rightButton.kill();
+    shootButton.kill();
+    //fireButton.kill();
+    //cursors.kill();
+    inEnd = true;
 }
