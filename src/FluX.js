@@ -30,6 +30,11 @@ var logo;
 
 var testString = '';
 var testText;
+var uri = 'http://mcm-highscores-hrd.appspot.com/score?';
+var gamename;
+var name;
+var email;
+var score;
 
 function preload()
 {
@@ -57,6 +62,11 @@ function create()
     menuText = game.add.text(160,500,'', { font: '50px Fixedsys', fill: '#ff0000' });
 
     game.input.onTap.addOnce(gameStart, this);
+
+    name = 'Bob';
+    email = 'mynameisntblair@gmail.com';
+    gamename = 'FluX';
+    score = scoreTotal;
 }
 
 function update()
@@ -407,4 +417,54 @@ function gameOver(){
     //fireButton.kill();
     //cursors.kill();
     inEnd = true;
+
+    submitScore(gamename, name, email, score);
 }
+
+function submitScore(gamename, name, email, score) {
+    var url = uri + "score?game={0}&nickname={1}&email={2}&score={3}&func=?";
+    url = url.replace('{0}', gamename);
+    url = url.replace('{1}', name);
+    url = url.replace('{2}', email);
+    url = url.replace('{3}', score);
+    url = document.getElementById('url').innerText
+
+    $.ajax({
+        type:  "GET",
+        url:   url,
+        async: true,
+        contentType: 'application/json',
+        dataType: 'jsonp',
+        success: function (json) {
+            $("#result").text(json.result);
+        },
+        error: function (e) {
+            window.alert(e.message);
+        }
+    });
+}
+
+/*function showScoreTable(obj) {
+    var s = "", i;
+    for (i = 0; i < obj.scores.length; i += 1) {
+        s += obj.scores[i].name + ' : ' + obj.scores[i].score + "";
+    }
+    document.getElementById("scoretable").innerHTML = s;
+}
+
+function getTable(game) {
+    var url = uri + "scoresjsonp?game=FluX&func=?";
+    document.getElementById('url').innerText = url;
+    $.ajax({
+        type: "GET",
+        url: url,
+        async: true,
+        // Note, instead of this we could have a success function...
+        jsonpCallback: 'showScoreTable',
+        contentType: 'application/json',
+        dataType: 'jsonp',
+        error: function (e) {
+            window.alert(e.message);
+        }
+    });
+}*/
