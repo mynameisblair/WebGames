@@ -30,7 +30,7 @@ var logo;
 
 var testString = '';
 var testText;
-var uri = 'http://mcm-highscores-hrd.appspot.com/score?';
+var uri = 'http://mcm-highscores-hrd.appspot.com/';
 var gamename;
 var name;
 var email;
@@ -59,21 +59,21 @@ function create()
     background = game.add.tileSprite(0,0,480,800,'background');
     logo = game.add.sprite(240,300,'logo');
     logo.anchor.setTo(0.5,0.5);
-    menuText = game.add.text(160,500,'', { font: '50px Fixedsys', fill: '#ff0000' });
+    menuText = game.add.text(130,150,'', { font: '50px Fixedsys', fill: '#ff0000' });
 
     game.input.onTap.addOnce(gameStart, this);
 
-    name = 'Bob';
+    name = 'Blair';
     email = 'mynameisntblair@gmail.com';
     gamename = 'FluX';
-    score = scoreTotal;
 }
 
 function update()
 {
+    score = scoreTotal;
     if(inMenu == true)
     {
-        menuText.text = 'Start';
+        menuText.text = 'Start Game';
         update_bg();
     } else if(inEnd == false)
     {
@@ -86,8 +86,10 @@ function update()
     } else if(inEnd == true)
     {
         testText.text = '';
-        menuText.text = ' Dead'
+        //menuText.text = ' Dead'
         update_bg();
+        getTable();
+        showScoreTable();
     }
 }
 
@@ -427,14 +429,14 @@ function submitScore(gamename, name, email, score) {
     url = url.replace('{1}', name);
     url = url.replace('{2}', email);
     url = url.replace('{3}', score);
-    url = document.getElementById('url').innerText
+    document.getElementById('url').innerText = url;
 
     $.ajax({
         type:  "GET",
         url:   url,
         async: true,
         contentType: 'application/json',
-        dataType: 'jsonp',
+        dataType: 'json',
         success: function (json) {
             $("#result").text(json.result);
         },
@@ -444,15 +446,16 @@ function submitScore(gamename, name, email, score) {
     });
 }
 
-/*function showScoreTable(obj) {
-    var s = "", i;
+function showScoreTable(obj) {
+    var s = '', i;
     for (i = 0; i < obj.scores.length; i += 1) {
-        s += obj.scores[i].name + ' : ' + obj.scores[i].score + "";
+        s += obj.scores[i].name + ' : ' + obj.scores[i].score + "\n";
     }
-    document.getElementById("scoretable").innerHTML = s;
+    document.getElementById('scoretable').innerHTML = s;
+    menuText.text = s;
 }
 
-function getTable(game) {
+function getTable() {
     var url = uri + "scoresjsonp?game=FluX&func=?";
     document.getElementById('url').innerText = url;
     $.ajax({
@@ -462,9 +465,10 @@ function getTable(game) {
         // Note, instead of this we could have a success function...
         jsonpCallback: 'showScoreTable',
         contentType: 'application/json',
-        dataType: 'jsonp',
+        dataType: 'json',
         error: function (e) {
             window.alert(e.message);
         }
+
     });
-}*/
+}
