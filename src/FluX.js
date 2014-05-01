@@ -88,8 +88,6 @@ function update()
         testText.text = '';
         //menuText.text = ' Dead'
         update_bg();
-        getTable();
-        showScoreTable();
     }
 }
 
@@ -421,6 +419,8 @@ function gameOver(){
     inEnd = true;
 
     submitScore(gamename, name, email, score);
+    getTable();
+    showScoreTable();
 }
 
 function submitScore(gamename, name, email, score) {
